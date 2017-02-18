@@ -1,0 +1,1 @@
+Create a minimal JavaFX based Scala sbt project.
