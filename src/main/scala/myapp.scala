@@ -166,7 +166,12 @@ object MyApp
 
 			if(ev.Id=="{gitupdate}")
 			{
-				GitUpdate
+				GitUpdate()
+			}
+
+			if(ev.Id=="{gitupdatecm}")
+			{
+				GitUpdate(cm=true)
 			}
 
 			if(ev.Id=="{gitpush}")
@@ -305,6 +310,7 @@ object MyApp
 			|<menuitem id="{createrepo}" text="Create repo"/>
 			|<menuitem id="{gitfirst}" text="First commit"/>
 			|<menuitem id="{gitupdate}" text="Update"/>
+			|<menuitem id="{gitupdatecm}" text="Update with custom commit message"/>
 			|<menuitem id="{gitpush}" text="Push"/>
 			|<menuitem id="{ziprepo}" text="Zip repo"/>
 			|<menuitem id="{createbats}" text="Create utility batch files"/>
@@ -313,10 +319,11 @@ object MyApp
 			|
 			|<label id="{infolabel}"/>
 			|
+			|<webview id="{projectwebview}" height="50.0" width="800.0"/>
+			|
 			|<tabpane id="{maintabpane}">
 			|<tab caption="Project">
-			|<vbox>
-			|<webview id="{projectwebview}" height="100.0" width="800.0"/>
+			|<vbox>			
 			|<vbox id="{projectfields}">
 			|<hbox gap="30">
 			|<editabletext id="{name}" lwidth="100.0" vwidth="100.0" name="Name"/>			
@@ -394,7 +401,7 @@ object MyApp
 		""".stripMargin
 
 		MyStage(id="{mainstage}",s=primaryStage,title="appbuilder",blob=blob,handler=handler,
-			setstagewidth=true,stagewidth=1200.0,setstageheight=true,stageheight=650)
+			setstagewidth=true,stagewidth=1200.0,setstageheight=true,stageheight=700)
 
 		Project.clear
 
@@ -649,9 +656,9 @@ object MyApp
 		StartAsTempBat(githubupfirst)
 	}
 
-	def GitUpdate
+	def GitUpdate(cm:Boolean=false)
 	{
-		val githubupdate=Project.githubupdate(push=false,pause=false)
+		val githubupdate=Project.githubupdate(push=false,pause=false,cm=cm)
 
 		StartAsTempBat(githubupdate)
 	}

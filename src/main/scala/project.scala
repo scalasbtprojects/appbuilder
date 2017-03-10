@@ -80,8 +80,8 @@ object Project
 		if(isvalid)
 		{
 			content=s"""
-				|Project: $name ( scalaversion : $scalaversion , sbtversion : $sbtversion )<br>
-				|File: $pathc
+				|<font color="blue" size="5"><b>$name</b></font>&nbsp;&nbsp;&nbsp;
+				|<small><i>$pathc</i></small>
 			""".stripMargin
 		}
 
@@ -249,16 +249,27 @@ object Project
 		file_from_list(List(rootdir,name,"project")).mkdir()
 	}
 
-	def githubupdate(push:Boolean=true,pause:Boolean=true) = s"""
-		|cd "${folderpath}"
-		|copy gitconfig.txt "$githubconfigdir$sep.gitconfig"		
-		|git init
-		|git add -A .
-		|git commit -m "Update"
-		|git remote set-url origin https://github.com/$githubuser/$name
-		|${if(push) "git push origin master" else ""}
-		|${if(pause) "pause" else ""}
-	""".stripMargin
+	def githubupdate(push:Boolean=true,pause:Boolean=true,cm:Boolean=false) =
+	{
+		val cmcontent = if(cm)
+			s"""
+				|set /p CommitMessage= Commit message : 
+				|git commit -m "%CommitMessage%"
+			""".stripMargin
+		else
+			s"""git commit -m "Update""""
+
+		s"""
+			|cd "${folderpath}"
+			|copy gitconfig.txt "$githubconfigdir$sep.gitconfig"		
+			|git init
+			|git add -A .
+			|$cmcontent
+			|git remote set-url origin https://github.com/$githubuser/$name
+			|${if(push) "git push origin master" else ""}
+			|${if(pause) "pause" else ""}
+		""".stripMargin
+	}
 
 	def githubfirst(push:Boolean=true,pause:Boolean=true) = s"""
 		|cd "${folderpath}"
@@ -441,6 +452,7 @@ object Project
 		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"deleterepo.bat")),deleterepo)		
 		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"githubfirst.bat")),githubfirst())
 		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"githubupdate.bat")),githubupdate())
+		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"githubupdatecm.bat")),githubupdate(cm=true))
 		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"gitconfig.txt")),gitconfig)
 		DataUtils.WriteStringToFile(path_from_list(List(rootdir,name,"stuff","eghdescsync.bat")),eghdescsyncbat)
 	}
