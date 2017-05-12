@@ -494,6 +494,8 @@ class MyEditableText extends MyComponent
 	def SetText(text:String)
 	{
 		valuelabel.setText(text)
+
+		if(GS("store")=="true") StoreValue(StringData(text))
 	}
 
 	def GetText:String=
@@ -546,6 +548,8 @@ class MyEditableText extends MyComponent
 				Fire("text edited",text)
 			}
 		})
+
+		if(GS("store")=="true") SetText(GetInitialStringValue(GS("text","")))
 
 		hbox.getChildren().addAll(namelabel,valuelabel,editbutton)
 

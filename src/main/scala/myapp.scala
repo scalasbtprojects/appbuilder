@@ -62,6 +62,13 @@ object MyApp
 
 				EditFile(file)
 			}
+
+			if(ev.Id=="{searchwebview}")
+			{
+				val file=ExecuteWebScript("{searchwebview}","file")
+
+				EditFile(file)
+			}
 		}
 
 		if(ev.kind=="checkbox changed")
@@ -91,6 +98,11 @@ object MyApp
 
 		if(ev.kind=="button pressed")
 		{
+			if(ev.Id=="{search}")
+			{
+				Search
+			}
+
 			if(ev.Id=="{startsbt}")
 			{
 				StartSbt
@@ -362,7 +374,18 @@ object MyApp
 			|<button id="{startsbt}" text="Start sbt"/>
 			|<button id="{sbtrun}" text="Sbt run"/>
 			|</hbox>
-			|<webview id="{srcwebview}" height="500.0" width="1100.0"/>
+			|<webview id="{srcwebview}" height="460.0" width="1100.0"/>
+			|</vbox>
+			|</tab>
+			|<tab id="{searchtab}" caption="Search">
+			|<vbox>
+			|<directorychooser id="{searchdir}"/>
+			|<editabletext id="{searchexts}" store="true" lwidth="100.0" vwidth="300.0" name="Extensions"/>			
+			|<hbox>			
+			|<editabletext id="{term}" store="true" lwidth="100.0" vwidth="300.0" name="Search for"/>			
+			|<button id="{search}" text="Search"/>
+			|</hbox>
+			|<webview id="{searchwebview}" height="400.0" width="1100.0"/>
 			|</vbox>
 			|</tab>
 			|<tab caption="Cmd">
@@ -752,6 +775,77 @@ object MyApp
 		""".stripMargin
 
 		StartAsTempBat(sbtrun)
+	}
+
+	def Search
+	{
+		val dir=GS("{components}#{searchdir}","")
+		val exts=GS("{components}#{searchexts}","scala")
+		val term=GS("{components}#{term}","")
+
+		val extsparts=exts.split("\\+")
+		var maxdepth= -1
+		if(extsparts.length>1) try
+		{
+			maxdepth=extsparts(1).toInt
+		} catch { case e:Throwable => }
+
+		SelectTab("{maintabpane}","Systemlog")
+
+		AbortDialog("Abort search",() => DataUtils.collectaborted=true)
+
+		Future
+		{
+			val files=DataUtils.CollectFiles(dir,recursive=true,exts=extsparts(0),term=term,dolog=true,maxdepth=maxdepth)
+
+			val l=dir.length
+			var i=0
+			val filescontent=(for(file <- files) yield
+			{
+				i+=1
+				val fc=file.substring(l+1)			
+				var p=""
+				var n=fc
+				val ls=fc.lastIndexOf(Project.sep)
+				if(ls>=0)
+				{
+					p=fc.substring(0,ls)
+					n=fc.substring(ls+1)
+				}
+				s"""
+					|<tr>
+					|<td>$i.</td>
+					|<td onmousedown="setclick('${DataUtils.EncodeHex(file)}');">
+					|<span style="cursor: pointer;">				
+					|<font color="red">$p</font> 
+					|<font color="blue"><b>$n</b></font>
+					|</span>
+					|</td>
+					|</tr>
+				""".stripMargin
+			}).mkString("\n")
+
+			val content=s"""
+				|<script>
+				|var file="";
+				|function setclick(setfile)
+				|{
+				|	file=setfile;
+				|}
+				|</script>
+				|<table>
+				|$filescontent
+				|</table>
+			""".stripMargin
+
+			MyActor.queuedExecutor ! ExecutionItem(client="Search",code=new Runnable{def run{
+				LoadWebContent("{searchwebview}",content)
+
+				CloseAbortDialog
+
+				SelectTab("{maintabpane}","Search")
+			}})									
+		}
 	}
 
 }

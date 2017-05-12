@@ -158,19 +158,50 @@ object DataUtils
 		efr
 	}
 
-	def CollectFiles(path:String,recursive:Boolean=false,setfiles:List[String]=List[String]()):List[String] =
+	var collectaborted=false
+
+	def CollectFiles(path:String,recursive:Boolean=false,setfiles:List[String]=List[String](),
+		exts:String=null,term:String=null,dolog:Boolean=false,maxdepth:Int= -1,depth:Int=0):List[String] =
 	{
+		if(collectaborted) return setfiles
+
+		if(maxdepth >= 0) if(depth > maxdepth) return setfiles
+
 		val d = new java.io.File(path)
 
 		if(!(d.exists && d.isDirectory)) return setfiles
 
 		var allfiles=setfiles
 
+		def fileOk(f:java.io.File):Boolean=
+		{
+			if(!f.isFile) return false
+			val fparts=f.getName.split("\\.")
+			val fext=fparts.reverse.head
+			var extok=false
+			if(exts!=null)
+			{
+				val parts=exts.split(";")
+				for(ext <- parts) if(ext==fext) extok=true
+			}
+			else
+			{
+				extok=true
+			}
+			if(!extok) return false
+			val path=f.getAbsolutePath
+			if(dolog) MyActor.Log("found "+path)
+			if((term==null)||(term=="")) return true
+			val content=ReadFileToString(path)
+			if(content.indexOf(term)>=0) return true
+			false
+		}
+
 		val all=d.listFiles
 		val dirs=all.filter(_.isDirectory)		
-		val files=all.filter(_.isFile)
+		var files=all.filter(fileOk(_))
 
-		if(recursive) for(dir <- dirs) allfiles = CollectFiles(dir.getAbsolutePath,recursive,allfiles)
+		if(recursive) for(dir <- dirs) allfiles = CollectFiles(dir.getAbsolutePath,recursive,allfiles,exts,term,dolog,maxdepth,depth+1)
 
 		allfiles = allfiles ::: ((for(f <- files) yield f.getAbsolutePath()).toList)
 
